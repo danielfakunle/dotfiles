@@ -1,0 +1,6 @@
+theme = grisaille
+keybind = cmd+backspace=text:\x15
+keybind = super+ctrl+arrow_right=resize_split:right,100
+keybind = super+ctrl+arrow_left=resize_split:left,100
+keybind = super+ctrl+arrow_up=resize_split:up,50
+keybind = super+ctrl+arrow_down=resize_split:down,50
