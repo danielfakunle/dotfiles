@@ -136,6 +136,7 @@ _G.Config = {}
 Config.project_root_markers = {
 	"package.json",
 	"pyproject.toml",
+	"setup.py",
 	"Cargo.toml",
 	"go.mod",
 	"pom.xml",
@@ -146,5 +147,28 @@ Config.project_root_markers = {
 	"composer.json",
 	"Makefile",
 	"CMakeLists.txt",
-	".git",
+	".project-root",
 }
+
+-- Project UI actions deliberately ignore Git/LSP roots, so nested packages win.
+Utils.project_root = function(buf)
+	buf = buf or 0
+	local path = vim.api.nvim_buf_get_name(buf)
+	if vim.bo[buf].buftype ~= "" or path == "" then
+		return vim.fn.getcwd()
+	end
+	local stat = vim.uv.fs_stat(path)
+	local directory = stat and stat.type == "directory" and path or vim.fs.dirname(path)
+	return vim.fs.root(directory, Config.project_root_markers) or directory
+end
+
+Utils.pick = function(source, opts)
+	return function()
+		local options = vim.tbl_deep_extend("force", { cwd = Utils.project_root() }, opts or {})
+		if options.project == false then
+			options.cwd = vim.fn.getcwd()
+		end
+		options.project = nil
+		require("snacks").picker.pick(source, options)
+	end
+end

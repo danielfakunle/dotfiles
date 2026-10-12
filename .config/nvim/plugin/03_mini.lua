@@ -20,32 +20,9 @@ end)
 now(function()
 	require("mini.starter").setup()
 end)
-now(function()
-	require("mini.statusline").setup()
-end)
+
 now(function()
 	require("mini.tabline").setup()
-end)
-
-now_if_args(function()
-	local process_items_opts = { kind_priority = { Text = -1, Snippet = 99 } }
-	local process_items = function(items, base)
-		return MiniCompletion.default_process_items(items, base, process_items_opts)
-	end
-	require("mini.completion").setup({
-		lsp_completion = {
-			source_func = "omnifunc",
-			auto_setup = false,
-			process_items = process_items,
-		},
-	})
-
-	local on_attach = function(ev)
-		vim.bo[ev.buf].omnifunc = "v:lua.MiniCompletion.completefunc_lsp"
-	end
-	new_autocmd("LspAttach", nil, on_attach, "Set 'omnifunc'")
-
-	vim.lsp.config("*", { capabilities = MiniCompletion.get_lsp_capabilities() })
 end)
 
 now_if_args(function()
@@ -70,7 +47,6 @@ end)
 
 now_if_args(function()
 	require("mini.misc").setup()
-	MiniMisc.setup_auto_root()
 	MiniMisc.setup_restore_cursor()
 	MiniMisc.setup_termbg_sync()
 end)
@@ -115,7 +91,6 @@ later(function()
     -- Explicitly opt-in for set of common keys to trigger clue window
     triggers = {
       { mode = { 'n', 'x' }, keys = '<Leader>' }, -- Leader triggers
-      { mode =   'n',        keys = '\\' },       -- mini.basics
       { mode = { 'n', 'x' }, keys = '[' },        -- mini.bracketed
       { mode = { 'n', 'x' }, keys = ']' },
       { mode =   'i',        keys = '<C-x>' },    -- Built-in completion
@@ -131,10 +106,6 @@ later(function()
     window = {
 	    delay = 500}
   })
-end)
-
-later(function()
-	require("mini.cmdline").setup()
 end)
 
 -- later(function()
@@ -173,12 +144,6 @@ end)
 
 later(function()
 	require("mini.keymap").setup()
-	-- Navigate 'mini.completion' menu with `<Tab>` /  `<S-Tab>`
-	-- MiniKeymap.map_multistep("i", "<Tab>", { "pmenu_next" })
-	-- MiniKeymap.map_multistep("i", "<S-Tab>", { "pmenu_prev" })
-	-- On `<CR>` try to accept current completion item, fall back to accounting
-	-- for pairs from 'mini.pairs'
-	MiniKeymap.map_multistep("i", "<CR>", { "pmenu_accept", "minipairs_cr" })
 	-- On `<BS>` just try to account for pairs from 'mini.pairs'
 	MiniKeymap.map_multistep("i", "<BS>", { "minipairs_bs" })
 end)
@@ -190,10 +155,6 @@ end)
 later(function()
 	-- Create pairs not only in Insert, but also in Command line mode
 	require("mini.pairs").setup({ modes = { command = true } })
-end)
-
-later(function()
-	require("mini.pick").setup()
 end)
 
 later(function()
@@ -216,11 +177,6 @@ later(function()
 			snippets.gen_loader.from_lang({ lang_patterns = lang_patterns }),
 		},
 	})
-
-	-- By default snippets available at cursor are not shown as candidates in
-	-- 'mini.completion' menu. This requires a dedicated in-process LSP server
-	-- that will provide them. To have that, uncomment next line (use `gcc`).
-	MiniSnippets.start_lsp_server()
 end)
 
 later(function()

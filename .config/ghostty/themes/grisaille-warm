@@ -4,8 +4,8 @@ background = #141414
 foreground = #d8d8d8
 cursor-color = #ed9e7d
 cursor-text = #141414
-selection-background = #3b2d27
-selection-foreground = #d8d8d8
+selection-background = #283543
+selection-foreground = cell-foreground
 
 palette = 0=#1c1c1c
 palette = 1=#d27789

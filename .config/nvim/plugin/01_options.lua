@@ -2,17 +2,6 @@ local now, later = Utils.now, Utils.later
 local new_autocmd = Utils.new_autocmd
 
 now(function()
-	require("mini.basics").setup({
-		options = { basic = false, win_borders = "double" },
-		mappings = {
-			windows = true,
-			option_toggle_prefix = [[\]],
-		},
-		autocommands = {
-			basic = true,
-		},
-	})
-
 	require("vim._core.ui2").enable({})
 
 	-- General ====================================================================
@@ -46,19 +35,18 @@ now(function()
 	vim.o.splitbelow = true -- Horizontal splits will be below
 	vim.o.splitkeep = "screen" -- Reduce scroll during window split
 	vim.o.splitright = true -- Vertical splits will be to the right
-	vim.o.winborder = "single" -- Use border in floating windows
-	vim.o.wrap = false -- Don't visually wrap lines (toggle with \w)
+	vim.o.winborder = "rounded" -- Use border in floating windows
+	vim.o.wrap = false -- Don't visually wrap lines (toggle with <Leader>uw)
 
 	vim.o.cursorlineopt = "screenline,number" -- Show cursor line per screen line
 
-	-- Special UI symbols. More is set via 'mini.basics' later.
-	vim.o.fillchars = "eob: ,fold:╌"
+	-- Special UI symbols
+	vim.opt.fillchars = { eob = " ", fold = " ", foldopen = "", foldclose = "", foldsep = " " }
 	vim.o.listchars = "extends:…,nbsp:␣,precedes:…,tab:  "
 
 	-- Folds
-	vim.o.foldlevel = 10 -- Fold nothing by default; set to 0 or 1 to fold
-	vim.o.foldmethod = "indent" -- Fold based on indent level
-	vim.o.foldnestmax = 10 -- Limit number of fold levels
+	vim.o.foldlevel = 99 -- Keep folds open by default
+	vim.o.foldmethod = "indent" -- Fallback when Tree-sitter/LSP folding is unavailable
 	vim.o.foldtext = "" -- Show text under fold with its highlighting
 
 	-- Editing ====================================================================
@@ -89,6 +77,51 @@ now(function()
 		vim.cmd("setlocal formatoptions-=c formatoptions-=o")
 	end
 	new_autocmd("FileType", nil, f, "Proper 'formatoptions'")
+
+	new_autocmd({ "FocusGained", "TermClose", "TermLeave" }, nil, function()
+		if vim.bo.buftype ~= "nofile" then
+			vim.cmd("checktime")
+		end
+	end, "Check for externally changed files")
+	new_autocmd("TextYankPost", nil, function()
+		if vim.fn.has("nvim-0.13") == 1 then
+			vim.hl.hl_op()
+		else
+			(vim.hl or vim.highlight).on_yank()
+		end
+	end, "Highlight yanked text")
+	new_autocmd("VimResized", nil, function()
+		local current_tab = vim.fn.tabpagenr()
+		vim.cmd("tabdo wincmd =")
+		vim.cmd("tabnext " .. current_tab)
+	end, "Equalize splits after resizing")
+	new_autocmd("FileType", "man", function(event)
+		vim.bo[event.buf].buflisted = false
+	end, "Unlist man pages")
+	new_autocmd("FileType", { "text", "plaintex", "typst", "gitcommit", "markdown" }, function()
+		vim.opt_local.wrap = true
+		vim.opt_local.spell = true
+	end, "Wrap and spell-check text")
+	new_autocmd("FileType", { "json", "jsonc", "json5" }, function()
+		vim.opt_local.conceallevel = 0
+	end, "Disable JSON concealment")
+	new_autocmd("BufWritePre", nil, function(event)
+		if event.match:match("^%w%w+:[\\/][\\/]") then
+			return
+		end
+		local file = vim.uv.fs_realpath(event.match) or event.match
+		vim.fn.mkdir(vim.fn.fnamemodify(file, ":p:h"), "p")
+	end, "Create missing parent directories")
+	new_autocmd(
+		"TermOpen",
+		"term://*",
+		vim.schedule_wrap(function(event)
+			if vim.api.nvim_get_current_buf() == event.buf and vim.bo.buftype == "terminal" then
+				vim.cmd("startinsert")
+			end
+		end),
+		"Start terminal in Insert mode"
+	)
 
 	new_autocmd("FileType", {
 		"PlenaryTestPopup",
